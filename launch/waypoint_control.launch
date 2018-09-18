@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<launch>
+  <include file="$(find rowbot_control)/launch/basic_control.launch"/>
+  <node  name="wamv_waypoint_follow" pkg="rowbot_control" type="navigate_wamv.py" output="screen">
+  </node>
+</launch>
