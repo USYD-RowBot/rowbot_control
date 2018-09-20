@@ -4,7 +4,7 @@
  * Inputs:
  *  - Speed: Desired speed
  *  - Yaw: Desired heading
- * Outputs: Drive Messages which steer the WamV
+ * Outputs: Twist message
 */
 #include <math.h>
 #include <vector>
@@ -55,6 +55,7 @@ public:
             phi_ = yaw;
 		}
     }
+    // Keeps the angle between -pi, pi
     float constrainAngle(float x)
     {
         x = fmod(x + M_PI,2*M_PI);
