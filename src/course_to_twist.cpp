@@ -27,12 +27,13 @@ class CourseToVel
 public:
     CourseToVel()
 	{
+            // ros::NodeHandle n_("~");
             // Course Publish
             velPub_ = n_.advertise<geometry_msgs::Twist>("/cmd_vel", 1);
 
             // Get the relevant parameters
-            // n_.getParam("course_kp", kp_);
-            kp_ = 0.5;
+            ros::param::get("~course_kp", kp_);
+            //kp_ = 0.5;
 
             received_odom_ = false; // Shouldn't use course if no odom received
 
@@ -71,7 +72,7 @@ public:
             // Calculate the difference between the desired and actual values
             phid = msg->yaw - phi_;
             phid = CourseToVel::constrainAngle(phid);
-            std::cout << "Yaw: " << phi_ << "Diff: " << phid<< std::endl;
+            // std::cout << "Yaw: " << phi_ << "Diff: " << phid<< std::endl;
             // Fill out the twist message
             twist.linear.x = msg->speed;
             twist.linear.y = 0.;

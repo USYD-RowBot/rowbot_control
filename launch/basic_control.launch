@@ -6,5 +6,6 @@
   </node>
 
   <node name="course_to_twist" pkg="rowbot_control" type="course_to_twist" output="screen">
+    <param name="~course_kp" value="0.25"/>
   </node>
 </launch>

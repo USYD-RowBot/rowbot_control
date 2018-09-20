@@ -29,6 +29,11 @@ class Node():
         self.lin_vel = 0
         self.lin_vel_y = 0
         self.ang_vel = 0
+
+        # Heartbeat Timer - if this time exceeds motors are cut off
+        self.heartbeat_count = 0.
+        self.heartbeat_cutoff_time = 1.0 # The max time exceeded before heartbeat
+
         self.left_pub = rospy.Publisher("left_cmd",Float32,queue_size=10)
         self.right_pub = rospy.Publisher("right_cmd",Float32,queue_size=10)
         self.left_msg = Float32()
@@ -51,6 +56,7 @@ class Node():
         #self.driveMsg.left-=data.angular.z
         #self.driveMsg.right+=data.angular.z
         self.cmd_vel = data
+        self.heartbeat_count = 0.
 
 
         #print("left: %f, right: %f"%(self.driveMsg.left,self.driveMsg.right))
@@ -62,32 +68,37 @@ class Node():
         self.lin_vel_y = twist_odom.linear.y
         rospy.loginfo("Current speed is: x"+ str(twist_odom.linear.x)+"\t z:" +str(twist_odom.angular.z))
 
+
     def PID_loop(self,dt):
         k = 0.5
-        self.error_prior_ang = self.error_ang
-        self.error_prior = self.error_ang
-        #ang = self.cmd_vel.angular.z -k * self.lin_vel_y*self.cmd_vel.linear.x
 
-        self.error_lin =  self.cmd_vel.linear.x - self.lin_vel
-        self.error_ang =  self.cmd_vel.angular.z - self.ang_vel
-        self.integral_lin = self.integral_lin+(self.error_lin*dt)
-        self.integral_ang = self.integral_ang+(self.error_ang*dt)
-        derivative_lin = (self.error_lin - self.error_prior_lin)/dt
-        derivative_ang = (self.error_ang - self.error_prior_ang)/dt
+        self.heartbeat_count += dt
+        if self.heartbeat_count < self.heartbeat_cutoff_time:
+            self.error_prior_ang = self.error_ang
+            self.error_prior = self.error_ang
+            #ang = self.cmd_vel.angular.z -k * self.lin_vel_y*self.cmd_vel.linear.x
+
+            self.error_lin =  self.cmd_vel.linear.x - self.lin_vel
+            self.error_ang =  self.cmd_vel.angular.z - self.ang_vel
+            self.integral_lin = self.integral_lin+(self.error_lin*dt)
+            self.integral_ang = self.integral_ang+(self.error_ang*dt)
+            derivative_lin = (self.error_lin - self.error_prior_lin)/dt
+            derivative_ang = (self.error_ang - self.error_prior_ang)/dt
 
 
-        self.left = self.lin_kp * self.error_lin + self.lin_ki * self.integral_lin + self.lin_kd * derivative_lin
-        self.right = self.lin_kp * self.error_lin + self.lin_ki * self.integral_lin + self.lin_kd * derivative_lin
+            self.left = self.lin_kp * self.error_lin + self.lin_ki * self.integral_lin + self.lin_kd * derivative_lin
+            self.right = self.lin_kp * self.error_lin + self.lin_ki * self.integral_lin + self.lin_kd * derivative_lin
 
-        self.left = self.left - (self.ang_kp * self.error_ang + self.ang_ki * self.integral_ang + self.ang_kd * derivative_ang)
-        self.right = self.right + (self.ang_kp * self.error_ang + self.ang_ki * self.integral_ang + self.ang_kd * derivative_ang)
-        #Publish the data
+            self.left = self.left - (self.ang_kp * self.error_ang + self.ang_ki * self.integral_ang + self.ang_kd * derivative_ang)
+            self.right = self.right + (self.ang_kp * self.error_ang + self.ang_ki * self.integral_ang + self.ang_kd * derivative_ang)
+            #Publish the data
 
-        self.left_msg.data = self.left
-        self.right_msg.data = self.right
+            self.left_msg.data = self.left
+            self.right_msg.data = self.right
 
-        self.left_pub.publish(self.left_msg)
-        self.right_pub.publish(self.right_msg)
+            self.left_pub.publish(self.left_msg)
+            self.right_pub.publish(self.right_msg)
+
 if __name__ == '__main__':
 
     rospy.init_node('twist2drive', anonymous=True)
