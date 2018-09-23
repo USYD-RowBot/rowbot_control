@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+  <node pkg="rowbot_control" type="twist_to_drive" name="twist_to_drive" output="screen">
+  </node>
+
+  <node name="course_to_twist" pkg="rowbot_control" type="course_to_twist" output="screen">
+    <param name="~course_kp" value="1.0"/>
+  </node>
+</launch>

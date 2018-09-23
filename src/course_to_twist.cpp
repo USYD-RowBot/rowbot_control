@@ -35,7 +35,15 @@ public:
             ros::param::get("~course_kp", kp_);
             //kp_ = 0.5;
 
-            received_odom_ = false; // Shouldn't use course if no odom received
+            set_speed_ = 0.;
+            set_yaw_ = 0.;
+
+            received_course_ = false;
+
+            heartbeat_timer_ = 0.;
+            heartbeat_limit_ = 1.0;
+            time_prev_ = ros::Time::now().toSec();
+
 
             // Subscribe to EKF
             subLocalise_ =  n_.subscribe("/odometry/filtered", 1, &CourseToVel::localisationCallback, this);
@@ -44,8 +52,14 @@ public:
     // Used to get the rotation (change?)
     void localisationCallback(const nav_msgs::Odometry::ConstPtr& ekf)
 	{
-		if(ros::ok())
+		if(ros::ok() && received_course_ && heartbeat_timer_ < heartbeat_limit_)
 		{
+            double time_now = ros::Time::now().toSec();
+            double time_diff;
+            time_diff = time_now - time_prev_;
+            heartbeat_timer_ = heartbeat_timer_ + time_diff;
+            time_prev_ = time_now;
+
             tf::Quaternion quat;
             quat.setValue(ekf->pose.pose.orientation.x, ekf->pose.pose.orientation.y, ekf->pose.pose.orientation.z, ekf->pose.pose.orientation.w);
 
@@ -53,6 +67,22 @@ public:
             double roll, pitch, yaw;
             tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);
             phi_ = yaw;
+
+            geometry_msgs::Twist twist;
+            double phid;
+            // Calculate the difference between the desired and actual values
+            phid = CourseToVel::constrainAngle(set_yaw_ - phi_);
+
+            // std::cout << "Yaw: " << phi_ << "Diff: " << phid<< std::endl;
+            // Fill out the twist message
+            twist.linear.x = set_speed_;
+            twist.linear.y = 0.;
+            twist.linear.z = 0.;
+            twist.angular.x = 0.;
+            twist.angular.y = 0.;
+            twist.angular.z = kp_*phid;
+            velPub_.publish(twist);
+            // std::cout << "Speed: " << twist.linear.x << " YawRate: " << twist.angular.z << std::endl;
 		}
     }
     // Keeps the angle between -pi, pi
@@ -63,26 +93,15 @@ public:
             x += 2*M_PI;
         return x - M_PI;
     }
-    // Receive the course message, and publish a drive message
+    // Receive the course message and store it
     void courseCallback(const rowbot_msgs::Course::ConstPtr& msg)
     {
         if(ros::ok() && !received_odom_)
         {
-            float phid, setpoint;
-            geometry_msgs::Twist twist;
-            // Calculate the difference between the desired and actual values
-            phid = msg->yaw - phi_;
-            phid = CourseToVel::constrainAngle(phid);
-            // std::cout << "Yaw: " << phi_ << "Diff: " << phid<< std::endl;
-            // Fill out the twist message
-            twist.linear.x = msg->speed;
-            twist.linear.y = 0.;
-            twist.linear.z = 0.;
-            twist.angular.x = 0.;
-            twist.angular.y = 0.;
-            twist.angular.z = kp_*phid;
-
-            velPub_.publish(twist);
+            heartbeat_timer_ = 0.; //Reset the timer
+            received_course_ = true;
+            set_speed_ = msg->speed;
+            set_yaw_ = msg->yaw;
         }
     }
 
@@ -92,13 +111,20 @@ private:
     ros::Subscriber courseSub_;
     ros::Publisher velPub_;
 
-	double speed_; // Not currently used but could be useful.
+	double set_speed_; // Not currently used but could be useful.
 
     double phi_;
+
+    double set_yaw_;
 
     double kp_;
 
     bool received_odom_;
+    bool received_course_;
+
+    double heartbeat_timer_;
+    double heartbeat_limit_;
+    double time_prev_;
 };
 
 
