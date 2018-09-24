@@ -36,9 +36,20 @@ public:
             // ros::param::get("~ang_kd", ang_kd_);
             //kp_ = 0.5;
             ang_kp_ = 0.5;
+            ang_ki_ = 0.0;
+            ang_kd_ = 0.0;
 
             lin_kp_ = 1.0;
-            lin_ki_ = 1.0;
+            lin_ki_ = 0.0;
+            lin_kd_ = 0.0;
+
+            prev_lin_error_ = 0.0;
+            acc_lin_error_ = 0.0;
+            max_lin_windup_ = 0.0;
+            prev_ang_error_ = 0.0;
+            acc_ang_error_ = 0.0;
+            max_ang_windup_ = 0.0;
+
 
             heartbeat_timer_ = 0.;
             heartbeat_limit_ = 1.0;
@@ -56,7 +67,7 @@ public:
     // Used to get the rotation (change?)
     void localisationCallback(const nav_msgs::Odometry::ConstPtr& odom)
 	{
-		if(ros::ok())
+		if(ros::ok() && heartbeat_timer_ < heartbeat_limit_)
 		{
             double time_now = ros::Time::now().toSec();
             double time_diff;
@@ -77,24 +88,47 @@ public:
             twist = odom->twist.twist;
 
             double alpha, velU, delta;
+            double ang_error, ang_effort;
+            double lin_error, lin_effort;
 
             // Yaw Rate Controller
-            alpha = twistSet_.angular.z - twist.angular.z;
-            // TODO Implement Speed Controller here
+            ang_error = twistSet_.angular.z - twist.angular.z;
+
             // Find forwards and sidewards velocity
             velU = sqrt(pow(twist.linear.x,2) + pow(twist.linear.y,2));
-            delta = twistSet_.linear.x - velU;
+            lin_error = twistSet_.linear.x - velU;
+
+            // Calculate the iterms
+            double ang_iterm, lin_iterm;
+            ang_iterm = acc_ang_error_ + time_diff*ang_error;
+            if(ang_iterm > abs(max_ang_windup_))
+            {
+                ang_iterm = max_ang_windup_;
+            }
+            lin_iterm = acc_lin_error_ + time_diff*lin_error;
+            if(lin_iterm > abs(max_lin_windup_))
+            {
+                lin_iterm = max_lin_windup_;
+            }
+
+            ang_effort = ang_kp_*ang_error;
+            lin_effort = lin_kp_*lin_error;
+            // ang_effort = ang_kp_*ang_error + ang_ki_*ang_iterm + ang_kd_*(ang_error - prev_ang_error_)/time_diff;
+            // lin_effort = lin_kp_*lin_error + lin_ki_*lin_iterm + lin_kd_*(lin_error - prev_lin_error_)/time_diff;
+
+            prev_ang_error_ = ang_effort;
+            prev_lin_error_ = lin_effort;
+            acc_lin_error_ = acc_lin_error_ + lin_error;
+            acc_ang_error_ = acc_ang_error_ + ang_error;
 
             double Ts, Tp, Vs, Vp, vel_offset;
             // Velocity Offset = Dist Between Hulls * Angular Velocity Command
-            vel_offset = 2.4384 * (twistSet_.angular.z + alpha*ang_kp_);
+            vel_offset = 2.4384 * (twistSet_.angular.z + ang_effort);
             // Change linear.x to linear.x + delta?
-            Vs = (twistSet_.linear.x+delta*lin_kp_) + vel_offset;
-            Vp = (twistSet_.linear.x+delta*lin_kp_) - vel_offset;
+            Vs = (twistSet_.linear.x+lin_effort) + vel_offset;
+            Vp = (twistSet_.linear.x+lin_effort) - vel_offset;
 
             // std::cout << "Vs: " << Vs << " Vp: " << Vp << std::endl;
-
-            // TODO Account for saturation - not complete
             double saturation_cmd_pos, saturation_cmd_neg, saturation_vel_pos, saturation_vel_neg;
             saturation_cmd_pos = 1.0;
             saturation_cmd_neg = -1.0;
@@ -105,17 +139,6 @@ public:
             // Sort the saturation, while prioritising the yaw rate over speed.
             while (!within_saturation_limits)
             {
-                // Do backwards first
-                if (Vs < saturation_vel_neg)
-                {
-                    Vs = saturation_vel_neg+0.01;
-                    Vp = Vs - 2*vel_offset;
-                }
-                if (Vp < saturation_vel_neg)
-                {
-                    Vp = saturation_vel_neg+0.01;
-                    Vs = Vp + 2*vel_offset;
-                }
                 if (Vs > saturation_vel_pos)
                 {
                     Vs = saturation_vel_pos-0.01;
@@ -125,6 +148,31 @@ public:
                 {
                     Vp = saturation_vel_pos-0.01;
                     Vs = Vp + 2*vel_offset;
+                }
+                // Do backwards last
+                if (Vs < saturation_vel_neg)
+                {
+                    Vs = saturation_vel_neg+0.01;
+                    if (vel_offset < saturation_vel_neg)
+                    {
+                        Vp = abs(Vs);
+                    }
+                    else
+                    {
+                        Vp = Vs - 2*vel_offset;
+                    }
+                }
+                if (Vp < saturation_vel_neg)
+                {
+                    Vp = saturation_vel_neg+0.01;
+                    if (vel_offset < saturation_vel_neg)
+                    {
+                        Vs = abs(Vp);
+                    }
+                    else
+                    {
+                        Vs = Vp + 2*vel_offset;
+                    }
                 }
                 if(Vs > saturation_vel_neg && Vs < saturation_vel_pos && Vp > saturation_vel_neg && Vs < saturation_vel_pos)
                 {
@@ -215,6 +263,7 @@ public:
     {
         if(ros::ok())
         {
+            heartbeat_timer_ = 0.0;
             twistSet_ = *msg;
             ROS_DEBUG_STREAM("Twist received");
         }
@@ -232,10 +281,16 @@ private:
     double lin_kp_;
     double lin_kd_;
     double lin_ki_;
+    double prev_lin_error_;
+    double acc_lin_error_;
+    double max_lin_windup_;
 
     double ang_kp_;
     double ang_kd_;
     double ang_ki_;
+    double prev_ang_error_;
+    double acc_ang_error_;
+    double max_ang_windup_;
 
 
     bool received_odom_;
