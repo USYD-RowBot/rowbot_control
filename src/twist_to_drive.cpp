@@ -49,8 +49,8 @@ public:
             prev_lin_error_ = 0.0;
             acc_lin_error_ = 0.0;
             // max_lin_windup_ = 1.0;
-            ros::param::get("~max_linear_windup", max_lin_windup_)
-            ros::param::get("~max_angular_windup", max_ang_windup_)
+            ros::param::get("~max_linear_windup", max_lin_windup_);
+            ros::param::get("~max_angular_windup", max_ang_windup_);
             prev_ang_error_ = 0.0;
             acc_ang_error_ = 0.0;
             // max_ang_windup_ = 1.0;
@@ -115,7 +115,7 @@ public:
             {
                 ang_iterm = max_ang_windup_;
             }
-            else if(ang_iterm < -max_ang_windup) // Check the negative windup limit
+            else if(ang_iterm < -max_ang_windup_) // Check the negative windup limit
             {
                 ang_iterm = -max_ang_windup_;
             }
@@ -128,7 +128,7 @@ public:
             }
             else if(lin_iterm < -max_lin_windup_) // Check negative windup limit
             {
-                lin_iterm = -max_lin_windup;
+                lin_iterm = -max_lin_windup_;
             }
 
             // If it is just the P-Controller
