@@ -8,18 +8,25 @@ As well as the standard rowbot requirements, this package also needs:
 - rowbot_msgs
 - shapely (pip install shapely)
 
+## How it works
+- twist_to_drive is a velocity controller, accepting twist messages on '/cmd_vel'. It publishes motor commands on 'left_thrust_cmd' and 'right_thrust_cmd'.
+- course_to_twist is a course controller, which controls the vessel's speed and heading. It subscribes to 'cmd_course' and publishes to '/cmd_vel'.
+- waypoint_control uses either Pure Pursuit or NLGL to output a target point, which the vessel aims for. For pure pursuit, this is the next waypoint. For NLGL this is a virtual target point, which is designed to bring the robot closer to the waypoint path.
+
 ## Running rowbot_control
 
 # Option 1 - basic operation
 
 To launch the course controller for Gazebo:
 ```bash
-roslaunch rowbot_control basic_control.launch
+roslaunch rowbot_control low_level_control.launch
 ```
 You can then publish a desired course using:
 ```bash
- rostopic pub -r 10 /cmd_course rowbot_msgs/Course  '{speed: 2.0, yaw: 0.0}'
+ rostopic pub -r 10 /cmd_course rowbot_msgs/Course  '{speed: 1.0, yaw: 0.0}'
 ```
+- Speed is in m/s
+- yaw is measured CCW from East (ENU standard)
 
 ## Option 2 - Waypoint Following
 
@@ -54,4 +61,4 @@ roslaunch simple_waypoints simple_waypoints.launch
 ```
 
 # Known bugs
-- speed_control not working well - leave off
+- When using low-level-control, at tight waypoints it will go backwards slightly

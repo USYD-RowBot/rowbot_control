@@ -35,11 +35,14 @@ public:
             ros::param::get("~course_kp", kp_);
             //kp_ = 0.5;
 
+            // Start of with speed and yaw set to zero
             set_speed_ = 0.;
             set_yaw_ = 0.;
 
+            // Don't do anything before a course command is received
             received_course_ = false;
 
+            // Initialise the heartbeat timers
             heartbeat_timer_ = 0.;
             heartbeat_limit_ = 1.0;
             time_prev_ = ros::Time::now().toSec();
@@ -47,22 +50,25 @@ public:
 
             // Subscribe to EKF
             subLocalise_ =  n_.subscribe("/odometry/filtered", 1, &CourseToVel::localisationCallback, this);
+            // Subscribe to course command
             courseSub_ =  n_.subscribe("/cmd_course", 1, &CourseToVel::courseCallback, this);
     }
-    // Used to get the rotation (change?)
+    // Uses the odometry to get the current course, in order to find the difference
     void localisationCallback(const nav_msgs::Odometry::ConstPtr& ekf)
 	{
+        // Check that a command has been received and timer is within limits
 		if(ros::ok() && received_course_ && heartbeat_timer_ < heartbeat_limit_)
 		{
+            // Do the heartbeat checks
             double time_now = ros::Time::now().toSec();
             double time_diff;
             time_diff = time_now - time_prev_;
             heartbeat_timer_ = heartbeat_timer_ + time_diff;
             time_prev_ = time_now;
 
+            // Convert from quaternion to RPY to get course
             tf::Quaternion quat;
             quat.setValue(ekf->pose.pose.orientation.x, ekf->pose.pose.orientation.y, ekf->pose.pose.orientation.z, ekf->pose.pose.orientation.w);
-
             // the tf::Quaternion has a method to access roll pitch and yaw
             double roll, pitch, yaw;
             tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);
@@ -99,7 +105,7 @@ public:
         if(ros::ok() && !received_odom_)
         {
             heartbeat_timer_ = 0.; //Reset the timer
-            received_course_ = true;
+            received_course_ = true; // Allow velocity commands to now be publisheds
             set_speed_ = msg->speed;
             set_yaw_ = msg->yaw;
         }
@@ -111,7 +117,7 @@ private:
     ros::Subscriber courseSub_;
     ros::Publisher velPub_;
 
-	double set_speed_; // Not currently used but could be useful.
+	double set_speed_;
 
     double phi_;
 
