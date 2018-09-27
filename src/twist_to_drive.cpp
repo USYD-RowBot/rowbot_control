@@ -103,7 +103,14 @@ public:
             ang_error = twistSet_.angular.z - twist.angular.z;
 
             // Find forwards and sidewards velocity
-            velU = sqrt(pow(twist.linear.x,2) + pow(twist.linear.y,2));
+            if (twist.linear.x < 0.0)
+            {
+                velU = -sqrt(pow(twist.linear.x,2) + pow(twist.linear.y,2));
+            }
+            else
+            {
+                velU = sqrt(pow(twist.linear.x,2) + pow(twist.linear.y,2));
+            }
             // TODO find sidewards velocity velV and find way to eliminate - at the moment NLGL the bulk of this.
             lin_error = twistSet_.linear.x - velU;
 
@@ -132,12 +139,12 @@ public:
             }
 
             // If it is just the P-Controller
-            ang_effort = ang_kp_*ang_error;
-            lin_effort = lin_kp_*lin_error;
+            // ang_effort = ang_kp_*ang_error;
+            // lin_effort = lin_kp_*lin_error;
 
             // A basic PID controller
-            // ang_effort = ang_kp_*ang_error + ang_ki_*ang_iterm + ang_kd_*(ang_error - prev_ang_error_)/time_diff;
-            // lin_effort = lin_kp_*lin_error + lin_ki_*lin_iterm + lin_kd_*(lin_error - prev_lin_error_)/time_diff;
+            ang_effort = ang_kp_*ang_error + ang_ki_*ang_iterm + ang_kd_*(ang_error - prev_ang_error_)/time_diff;
+            lin_effort = lin_kp_*lin_error + lin_ki_*lin_iterm + lin_kd_*(lin_error - prev_lin_error_)/time_diff;
 
             // Store the errors into previous error, for use in the D-term.
             prev_ang_error_ = ang_error;
@@ -148,10 +155,11 @@ public:
 
             double Ts, Tp, Vs, Vp, vel_offset;
             // Velocity Offset = Dist Between Hulls * Angular Velocity Command
-            vel_offset = 2.4384 * (twistSet_.angular.z + ang_effort);
+            // vel_offset = 2.4384 * (twistSet_.angular.z + ang_effort);
+            vel_offset = 2.4384 * ( ang_effort );
             // Change linear.x to linear.x + delta?
-            Vs = (twistSet_.linear.x+lin_effort) + vel_offset;
-            Vp = (twistSet_.linear.x+lin_effort) - vel_offset;
+            Vs = ( lin_effort ) + vel_offset;
+            Vp = ( lin_effort ) - vel_offset;
 
             // std::cout << "Vs: " << Vs << " Vp: " << Vp << std::endl;
 
@@ -169,6 +177,8 @@ public:
             saturation_vel_neg = command_to_vel(saturation_cmd_neg, -1.35, 0.0, 4.89, 0.05, 1.00, -1.31);
             // The motors shouldn't be allowed to operate when saturated - with the GLF mapping it can output NaNs.
             bool within_saturation_limits = false;
+
+            // std::cout << "Vs: " << Vs << " Vp: " << Vp << " Offset: " << vel_offset << std::endl;
 
             // Sort the saturation, while prioritising the yaw rate over speed.
             while (!within_saturation_limits)

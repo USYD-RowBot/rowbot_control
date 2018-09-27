@@ -1,15 +1,23 @@
 <?xml version="1.0"?>
 <launch>
+  <arg name="lin_kp" default="1.0"/>
+  <arg name="lin_ki" default="1.0"/>
+  <arg name="lin_kd" default="0.0"/>
+  <arg name="ang_kp" default="2.0"/>
+  <arg name="ang_ki" default="0.0"/>
+  <arg name="ang_kd" default="0.0"/>
+  <arg name="max_linear_windup" default="1.0"/>
+  <arg name="max_angular_windup" default="1.0"/>
   <!-- Twist to Drive receives the twist messages, and outputs motor drive commands -->
   <node pkg="rowbot_control" type="twist_to_drive" name="twist_to_drive" output="screen">
-    <param name="~lin_kp" value="1.0"/>
-    <param name="~lin_ki" value="0.0"/>
-    <param name="~lin_kd" value="0.0"/>
-    <param name="~ang_kp" value="0.5"/>
-    <param name="~ang_ki" value="0.0"/>
-    <param name="~ang_kd" value="0.0"/>
-    <param name="~max_linear_windup" value="1.0"/> <!-- The cap on the i-term of the PID controller -->
-    <param name="~max_angular_windup" value="1.0"/> <!-- The cap on the i-term of the PID controller -->
+    <param name="~lin_kp" value="$(arg lin_kp)"/>
+    <param name="~lin_ki" value="$(arg lin_ki)"/>
+    <param name="~lin_kd" value="$(arg lin_kd)"/>
+    <param name="~ang_kp" value="$(arg ang_kp)"/>
+    <param name="~ang_ki" value="$(arg ang_ki)"/>
+    <param name="~ang_kd" value="$(arg ang_kd)"/>
+    <param name="~max_linear_windup" value="$(arg max_linear_windup)"/> <!-- The cap on the i-term of the PID controller -->
+    <param name="~max_angular_windup" value="$(arg max_angular_windup)"/> <!-- The cap on the i-term of the PID controller -->
   </node>
 
   <!-- Course to Twist receives the course commands, and outputs twist messages -->

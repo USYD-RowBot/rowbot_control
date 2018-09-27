@@ -56,6 +56,9 @@ class StationKeeping():
         # Tolerance to hit the waypoints
         self.inner_radius = rospy.get_param("~inner_radius", 2.0)  # If speed control is on, this is max speed
         self.outer_radius = rospy.get_param("~outer_radius", 10.0)
+        self.max_speed = rospy.get_param("~max_speed", 1.5)
+        self.min_speed = rospy.get_param("~min_speed", 0.05)
+
         # Prefer adding the subscribers at the end of init
         rospy.Subscriber(odom_topic, Odometry, self.localisationCallback)
         rospy.Subscriber(station_topic, Point, self.stationCallback)
@@ -106,6 +109,7 @@ class StationKeeping():
                 set_speed = self.max_speed
                 set_yaw = angleStation
 
+            rospy.loginfo("Position: %f,%f Station: %f,%f Speed: %f Yaw: %f" %(self.px, self.py, self.station.x, self.station.y, set_speed, set_yaw))
             course_msg = Course()
             course_msg.speed = set_speed
             course_msg.yaw = set_yaw
@@ -122,7 +126,9 @@ class StationKeeping():
 
         """
         # Delete all the old waypoints
+        self.go = True
         self.station = point_msg
+        rospy.loginfo("Received station command")
 
 
 if __name__ == '__main__':
