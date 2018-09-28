@@ -103,14 +103,30 @@ public:
             ang_error = twistSet_.angular.z - twist.angular.z;
 
             // Find forwards and sidewards velocity
+            // velU = sqrt(pow(twist.linear.x,2) + pow(twist.linear.y,2));
+            double velM, velV, vel_angle, vel_yaw_diff;
+
             if (twist.linear.x < 0.0)
             {
                 velU = -sqrt(pow(twist.linear.x,2) + pow(twist.linear.y,2));
             }
-            else
-            {
+            else{
                 velU = sqrt(pow(twist.linear.x,2) + pow(twist.linear.y,2));
             }
+
+            // Find the angle of the velocity in the XY plane
+            // vel_angle = atan2(twist.linear.y, twist.linear.x);
+            // vel_yaw_diff = TwistToDrive::constrainAngle(vel_angle-phi_);
+            // TODO use vel_yaw_diff to find velU, velV;
+            // if (std::abs(vel_yaw_diff) > M_PI_2)
+            // {
+            //     velU = -velM;
+            // }
+            // else
+            // {
+            //     velU = velM;
+            // }
+
             // TODO find sidewards velocity velV and find way to eliminate - at the moment NLGL the bulk of this.
             lin_error = twistSet_.linear.x - velU;
 
@@ -308,7 +324,7 @@ public:
         return command;
     }
     // Keeps the angle between -pi, pi
-    float constrainAngle(float x)
+    double constrainAngle(double x)
     {
         x = fmod(x + M_PI,2*M_PI);
         if (x < 0)

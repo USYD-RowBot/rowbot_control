@@ -21,7 +21,7 @@ from path_following import NLGLvtp, purepursuit
 
 from waypoint_passed import waypoint_passed
 
-class StationKeeping():
+class CircleFollowing():
     """
     This class performs basic station keeping for a WAM-V.
 
@@ -33,7 +33,7 @@ class StationKeeping():
                     otherwise drives to the station.
         - Option 2: Set a circle and it slowly follows this circle.
 
-    This class is Option 1.
+    This class is Option 2.
     """
 
     def __init__(self):
@@ -146,8 +146,8 @@ if __name__ == '__main__':
     Navigates the WamV to a set of waypoints
     """
 
-    rospy.init_node('station_keeping', anonymous=True)
+    rospy.init_node('circle_following', anonymous=True)
 
-    sk = StationKeeping()
+    cf = CircleFollowing()
 
     rospy.spin()
