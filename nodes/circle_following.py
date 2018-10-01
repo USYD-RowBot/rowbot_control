@@ -14,6 +14,7 @@ import tf
 from rospy.numpy_msg import numpy_msg
 
 import shapely
+import shapely.geometry
 
 from rowbot_msgs.msg import Course
 
@@ -37,7 +38,7 @@ class CircleFollowing():
     """
 
     def __init__(self):
-        """Initiates the Station Keeping Class
+        """Initiates the CircleFollowing Class
 
         Args:
 
@@ -64,10 +65,11 @@ class CircleFollowing():
         self.py = 0.
         self.phi = 0.
         # Tolerance to hit the waypoints
-        self.inner_radius = rospy.get_param("~inner_radius", 2.0)  # If speed control is on, this is max speed
-        self.outer_radius = rospy.get_param("~outer_radius", 10.0)
-        self.max_speed = rospy.get_param("~max_speed", 1.5)
-        self.min_speed = rospy.get_param("~min_speed", 0.05)
+        self.radius = rospy.get_param("~radius", 10.0)  # If speed control is on, this is max speed
+        self.nlgl_radius = rospy.get_param("nlgl_radius", 4.0)
+        self.max_speed = rospy.get_param("~max_speed", 1.0) # Traverse speed
+        self.min_speed = rospy.get_param("~min_speed", 0.5) # Hold speed
+        self.direction = rospy.get_param("~direction", "CCW")
 
         # Prefer adding the subscribers at the end of init
         rospy.Subscriber(odom_topic, Odometry, self.localisationCallback)
@@ -103,21 +105,46 @@ class CircleFollowing():
             distStation = np.sqrt((self.px - self.station.x)**2 + (self.py - self.station.y)**2)
             angleStation = math.atan2(self.station.y - self.py, self.station.x - self.px)
 
-            if distStation < self.inner_radius:
-                set_speed = 0.0
-                set_yaw = self.phi
-            elif distStation > self.inner_radius and distStation < self.outer_radius:
-                set_yaw = angleStation
-                # TODO smart way of selecting the speed
-                # At the moment, select an arbitrary speed, and let underlying controllers do the work to ensure it is achieved
-                # Try this - speed is proportional to distance to centre
-                set_speed = (distStation)/self.outer_radius * self.max_speed
-                # Try this - speed is proportional to distance to inner radius
-                set_speed = (distStation - self.inner_radius)/(self.outer_radius - self.inner_radius) * (self.max_speed - self.min_speed) + self.min_speed
+            self.stationShape = shapely.geometry.Point(self.station.x, self.station.y).buffer(self.radius)
+            robotShape = shapely.geometry.Point(self.px, self.py).buffer(self.nlgl_radius)
+            intersections = np.array(robotShape.boundary.intersection(self.stationShape.boundary))
+            if intersections is None or intersections.size == 0:
+                if distStation < self.radius:
+                    # Contained within, just go straight until you hit circle -  #TODO improve???
+                    set_speed = self.min_speed
+                    set_yaw = self.phi
+                else:
+                    # Out of range, aim at the centre, go max speed
+                    set_speed = self.max_speed
+                    set_yaw = angleStation
             else:
-                # Go fast towards the target station
-                set_speed = self.max_speed
-                set_yaw = angleStation
+                # Make sure intersections is shaped correctly, as 2D vector
+                intersections = intersections.reshape(-1, 2)
+                # print(intersections)
+                # There is an intersection between NLGL circle and station circle
+                if intersections.shape[0] == 1:
+                    set_yaw = math.atan2(intersections[0,1] - self.py, intersections[0,0] - self.px)
+                    set_speed = self.min_speed
+                else:
+                    vtp = np.zeros([2])
+                    # There should be two angles now
+                    angle_from_centre0 = math.atan2(intersections[0, 1] - self.station.y, intersections[0,0] - self.station.x)
+                    angle_from_centre1 = math.atan2(intersections[1, 1] - self.station.y, intersections[1,0] - self.station.x)
+                    angle_diff = np.unwrap(np.array([angle_from_centre1 - angle_from_centre0]))
+                    if self.direction == "CW":
+                        # Aim for the negative diff angle
+                        if angle_diff > 0:
+                            vtp = intersections[0,:]
+                        else:
+                            vtp = intersections[1,:]
+                    else:
+                        # Counter clockwise, aim for positive diff angle
+                        if angle_diff > 0:
+                            vtp = intersections[1,:]
+                        else:
+                            vtp = intersections[0,:]
+                    set_speed = self.min_speed
+                    set_yaw = math.atan2(vtp[1] - self.py, vtp[0] - self.px)
 
             rospy.loginfo("Position: %f,%f Station: %f,%f Speed: %f Yaw: %f" %(self.px, self.py, self.station.x, self.station.y, set_speed, set_yaw))
             course_msg = Course()
