@@ -8,6 +8,10 @@
   <arg name="ang_kd" default="0.0"/>
   <arg name="max_linear_windup" default="1.0"/>
   <arg name="max_angular_windup" default="1.0"/>
+  <arg name="motor_command_limit" default="1.0"/>
+  <arg name="use_vel_fitting" default="false"/>
+  <arg name="negative_scaling_factor" default="1.0"/>
+  <arg name="positive_scaling_factor" default="2.5"/>
   <!-- Twist to Drive receives the twist messages, and outputs motor drive commands -->
   <node pkg="rowbot_control" type="twist_to_drive" name="twist_to_drive" output="screen">
     <param name="~lin_kp" value="$(arg lin_kp)"/>

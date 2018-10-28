@@ -159,6 +159,10 @@ add_executable(twist_to_drive src/twist_to_drive.cpp)
 target_link_libraries(twist_to_drive ${catkin_LIBRARIES})
 add_dependencies(twist_to_drive ${catkin_EXPORTED_TARGETS})
 
+add_executable(course_to_drive src/course_to_drive.cpp)
+target_link_libraries(course_to_drive ${catkin_LIBRARIES})
+add_dependencies(course_to_drive ${catkin_EXPORTED_TARGETS})
+
 #############
 ## Install ##
 #############
