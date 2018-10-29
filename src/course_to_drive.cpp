@@ -66,7 +66,7 @@ public:
             received_course_ = false;
 
             // Subscribe to EKF
-            subLocalise_ =  n_.subscribe("/odometry/filtered", 1, &CourseToDrive::localisationCallback, this);
+            subLocalise_ =  n_.subscribe("/odom", 1, &CourseToDrive::localisationCallback, this);
             // Subscribe to course command
             courseSub_ =  n_.subscribe("/cmd_course", 1, &CourseToDrive::courseCallback, this);
     }
@@ -325,7 +325,7 @@ public:
     // Receive the course message and store it
     void courseCallback(const rowbot_msgs::Course::ConstPtr& msg)
     {
-        if(ros::ok() && !received_odom_)
+        if(ros::ok())
         {
             heartbeat_timer_ = 0.; //Reset the timer
             received_course_ = true; // Allow velocity commands to now be publisheds
@@ -410,7 +410,6 @@ private:
 
     double set_yaw_;
 
-    bool received_odom_;
     bool received_course_;
 
     double heartbeat_timer_;
