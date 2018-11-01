@@ -1,6 +1,6 @@
 from __future__ import division
-#import shapely
-#import shapely.geometry
+import shapely
+import shapely.geometry
 import numpy as np
 #import matplotlib.pyplot as plt
 
@@ -46,6 +46,7 @@ def waypoint_passed(w, t, p, dist=1000):
         return False
 
 if __name__ == '__main__':
+    import matplotlib.pyplot as plt
     w = Point(2., 0.)
     t = Point(-10., 10.)
     p = Point(5., 6.)
