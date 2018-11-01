@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <launch>
-  <arg name="lin_kp" default="100.0"/>
+  <arg name="lin_kp" default="80.0"/>
   <arg name="lin_ki" default="0.0"/>
   <arg name="lin_kd" default="0.0"/>
-  <arg name="yaw_kp" default="100.0"/>
+  <arg name="yaw_kp" default="40.0"/>
   <arg name="yaw_ki" default="0.0"/>
   <arg name="yaw_kd" default="0.0"/>
   <arg name="max_linear_windup" default="100.0"/>

@@ -1,8 +1,8 @@
 from __future__ import division
-import shapely
-import shapely.geometry
+#import shapely
+#import shapely.geometry
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 class Point:
     def __init__(self, x, y):

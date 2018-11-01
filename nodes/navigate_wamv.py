@@ -13,7 +13,7 @@ import math
 import tf
 from rospy.numpy_msg import numpy_msg
 
-import shapely
+#import shapely
 
 from rowbot_msgs.msg import Course
 
