@@ -17,7 +17,7 @@ if __name__ == '__main__':
     rpub = rospy.Publisher("/right_thrust_cmd",Float32,queue_size=1)
 
     # thrust_cmd = rospy.get_param("thrust_cmd", 0.0)
-    thrust_cmd = -1.0
+    thrust_cmd = 150.0
 
     rate = rospy.Rate(20)
 

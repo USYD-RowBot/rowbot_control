@@ -1,17 +1,17 @@
 <?xml version="1.0"?>
 <launch>
-  <arg name="lin_kp" default="2.0"/>
-  <arg name="lin_ki" default="4.0"/>
+  <arg name="lin_kp" default="80.0"/>
+  <arg name="lin_ki" default="0.0"/>
   <arg name="lin_kd" default="0.0"/>
-  <arg name="yaw_kp" default="1.0"/>
+  <arg name="yaw_kp" default="40.0"/>
   <arg name="yaw_ki" default="0.0"/>
   <arg name="yaw_kd" default="0.0"/>
-  <arg name="max_linear_windup" default="1.0"/>
-  <arg name="max_yaw_windup" default="1.0"/>
-  <arg name="motor_command_limit" default="1.0"/>
+  <arg name="max_linear_windup" default="100.0"/>
+  <arg name="max_yaw_windup" default="100.0"/>
+  <arg name="motor_command_limit" default="100.0"/>
   <arg name="use_vel_fitting" default="false"/>
   <arg name="negative_scaling_factor" default="1.0"/>
-  <arg name="positive_scaling_factor" default="2.5"/>
+  <arg name="positive_scaling_factor" default="1.0"/>
   <!-- Twist to Drive receives the twist messages, and outputs motor drive commands -->
   <node pkg="rowbot_control" type="course_to_drive" name="course_to_drive" output="screen">
     <param name="~lin_kp" value="$(arg lin_kp)"/>
