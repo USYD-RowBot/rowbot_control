@@ -34,6 +34,7 @@ public:
             ros::param::get("~use_vel_fitting", use_vel_fitting_);
             ros::param::get("~negative_scaling_factor", negative_scaling_factor_);
             ros::param::get("~positive_scaling_factor", positive_scaling_factor_);
+            ROS_INFO("POSITIVE_SCALING: %f",positive_scaling_factor_);
             ros::param::get("~lin_kp", lin_kp_);
             ros::param::get("~lin_ki", lin_ki_);
             ros::param::get("~lin_kd", lin_kd_);
