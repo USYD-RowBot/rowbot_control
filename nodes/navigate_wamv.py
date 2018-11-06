@@ -45,12 +45,12 @@ class WamNav():
         if robot_name is None or robot_name == "":
             course_topic = '/cmd_course'
             request_topic = '/request_waypoints'
-            odom_topic = '/odometry/filtered'
+            odom_topic = '/odom'
             waypoint_topic = '/waypoints'
         else:
             course_topic = '/' + robot_name + '/cmd_course'
             request_topic = '/' + robot_name + '/request_waypoints'
-            odom_topic = '/' + robot_name + '/odometry/filtered'
+            odom_topic = '/' + robot_name + '/odom'
             waypoint_topic = '/' + robot_name + '/waypoints'
         # The publishers
         self.wpRequestPub_ = rospy.Publisher(request_topic, Bool, queue_size=1)

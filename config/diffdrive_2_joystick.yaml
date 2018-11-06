@@ -7,7 +7,7 @@ teleop:
       -
         axis: 1
         target: data
-        scale: 1000
+        scale: 500
   move2:
     type: topic
     message_type: std_msgs/Float32
@@ -16,7 +16,7 @@ teleop:
       -
         axis: 4
         target: data
-        scale: 1000
+        scale: 500
 
   joy_priority:
     type: action
