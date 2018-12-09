@@ -47,14 +47,17 @@ class WamNav():
             request_topic = '/request_waypoints'
             odom_topic = '/odom'
             waypoint_topic = '/waypoints'
+            vtp_topic = '/target_point'
         else:
             course_topic = '/' + robot_name + '/cmd_course'
             request_topic = '/' + robot_name + '/request_waypoints'
             odom_topic = '/' + robot_name + '/odom'
             waypoint_topic = '/' + robot_name + '/waypoints'
+            vtp_topic = '/' + robot_name + '/target_point'
         # The publishers
         self.wpRequestPub_ = rospy.Publisher(request_topic, Bool, queue_size=1)
         self.coursePub_ = rospy.Publisher(course_topic, Course, queue_size=1)
+        self.vtpPub_ = rospy.Publisher(vtp_topic, Point, queue_size=1)
         # Go - if go is 0, don't move, if 1, then go.
         self.go = False
         # Pose
@@ -137,6 +140,8 @@ class WamNav():
                 phid = purepursuit(xt, yt, self.px, self.py)
             else:
                 phid = purepursuit(self.tx, self.ty, self.px, self.py)
+                xt = self.tx
+                yt = self.ty
 
             # phid is the angle to the target waypoint
             # Stands for 'phi desired'
@@ -144,6 +149,13 @@ class WamNav():
             course_msg.speed = controlled_speed
             course_msg.yaw = phid
             self.coursePub_.publish(course_msg)
+
+            # Publish the target point - not used - mainly for debugging Nav
+            tp_msg = Point()
+            tp_msg.x = xt
+            tp_msg.y = yt
+            tp_msg.z = 0.
+            self.vtpPub_.publish(tp_msg)
 
     def waypointCallback(self, path_msg):
         """ Receives the waypoint array from the waypoint publisher

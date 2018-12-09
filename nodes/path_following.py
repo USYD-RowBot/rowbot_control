@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 from math import sqrt, atan2, cos, sin
 import math
+import shapely
+import shapely.geometry
+import numpy as np
 
 def Carrotvtp(wx,wy,tx,ty,px,py,delta):
     """This algorithm is an implementation of the Carrot Chasing Algorithm
@@ -102,7 +105,12 @@ def NLGLvtp(wx,wy,tx,ty,px,py,L):
             xt = (-B)/(2*A)
             yt = m*xt-m*wx+wy
         else:                           # If there are no real solutions - go directly to line
-            [xt, yt] = Carrotvtp(wx,wy,tx,ty,px,py,0)   #  Carrot with 0 delta value - the closest point on the line
+            # [xt, yt] = Carrotvtp(wx,wy,tx,ty,px,py,0)   #  Carrot with 0 delta value - the closest point on the line
+            line = shapely.geometry.LineString([(wx, wy), (tx, ty)])  # Create a shapely line out of the waypoint line
+            vessel = shapely.geometry.Point((px, py))  # Create the vessel
+            tp = np.array(line.interpolate(line.project(vessel)))  # the new target point
+            xt = tp[0]
+            yt = tp[1]
     return [xt, yt]                  # Return the VTP
 
 
