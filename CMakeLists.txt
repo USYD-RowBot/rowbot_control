@@ -170,6 +170,21 @@ add_executable(course_to_drive src/course_to_drive.cpp)
 target_link_libraries(course_to_drive ${catkin_LIBRARIES})
 add_dependencies(course_to_drive ${catkin_EXPORTED_TARGETS})
 
+add_executable(path_to_waypoints src/path_to_waypoints.cpp)
+target_link_libraries(path_to_waypoints ${catkin_LIBRARIES})
+add_dependencies(path_to_waypoints ${catkin_EXPORTED_TARGETS})
+
+add_executable(navigate_asv src/navigate_asv.cpp)
+target_link_libraries(navigate_asv ${catkin_LIBRARIES})
+add_dependencies(navigate_asv ${catkin_EXPORTED_TARGETS})
+
+add_executable(navigate_vessel src/navigate_vessel.cpp)
+target_link_libraries(navigate_vessel ${catkin_LIBRARIES})
+add_dependencies(navigate_vessel ${catkin_EXPORTED_TARGETS})
+
+
+
+
 #############
 ## Install ##
 #############
