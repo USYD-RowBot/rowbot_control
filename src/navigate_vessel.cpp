@@ -25,7 +25,10 @@
 #include "geometry_msgs/Pose.h"
 #include "nav_msgs/Odometry.h"
 #include "nav_msgs/Path.h"
-#include "heron_msgs/Course.h"
+#include "rowbot_msgs/Course.h"
+#include "rowbot_msgs/VesselWaypoint.h"
+#include "rowbot_msgs/VesselPath.h"
+
 #include "tf/transform_datatypes.h"
 
 
@@ -41,13 +44,13 @@ public:
     Navigator()
 	{
             // Subscribe to EKF
-            subLocalise_ =  n_.subscribe("/odometry/filtered", 1, &Navigator::localisationCallback, this);
+            subLocalise_ =  n_.subscribe("/odom", 1, &Navigator::localisationCallback, this);
             // Susbcribe to waypoints
             subWP_ =  n_.subscribe("/waypoints", 1, &Navigator::wpCallback, this);
             // Publish waypoint request
             reqPub_ = n_.advertise<std_msgs::Bool>("/request_waypoints", 1);
             // Course Publish
-            coursePub_ = n_.advertise<heron_msgs::Course>("/cmd_course", 1);
+            coursePub_ = n_.advertise<rowbot_msgs::Course>("/cmd_course", 1);
             // Publish a message every time a waypoint is hit
             hitPub_ = n_.advertise<geometry_msgs::Pose>("/waypoint_hit", 1);
 
@@ -189,8 +192,6 @@ public:
 		{
             px_ = ekf->pose.pose.position.x;
             py_ = ekf->pose.pose.position.y;
-            //px_ = -ekf->pose.pose.position.y; // Swaps to NWU
-            //py_ = ekf->pose.pose.position.x; // Swaps to NWU
             tf::Quaternion quat;
             quat.setValue(ekf->pose.pose.orientation.x, ekf->pose.pose.orientation.y, ekf->pose.pose.orientation.z, ekf->pose.pose.orientation.w);
 
@@ -226,7 +227,7 @@ public:
                 //double phid = 0.3;
                 ROS_INFO("Pose - x: %lf y: %lf phi: %lf WP - tx: %lf ty: %lf idx: %d", px_, py_, phi_, tx_, ty_, wIdx_);
                 // Publishes a course message
-                heron_msgs::Course course;
+                rowbot_msgs::Course course;
                 course.speed = speed_;
                 course.yaw = phid;
                 coursePub_.publish(course);
@@ -237,7 +238,7 @@ public:
     // Stops the vessel
     void stop_vessel(void)
     {
-        heron_msgs::Course course;
+        rowbot_msgs::Course course;
         course.speed = 0.0;
         course.yaw = 0.0;
         coursePub_.publish(course);
@@ -245,31 +246,30 @@ public:
 
     // Waypoint Callback
     // Inputs a waypoint array and stores it. Tells the navigator to go.
-    void wpCallback(const geometry_msgs::PoseArray::ConstPtr& newWP)
+    void wpCallback(const rowbot_msgs::VesselPath::ConstPtr& vesselPath)
     {
         waypoints_.clear();
-        int numWP = newWP->poses.size();
+        // TODO add a waypoint of the current position at the start
+        // e.g.:
+        // rowbot_msgs::VesselWaypoint currP;
+        // geometry_msgs::Pose pose;
+        // pose.position.x = px_;
+        // pose.position.y = py_;
+        // currP.pose = pose;
+        // currP.tolerance = tolerance_;
+        // vesselPath->waypoints.pushfront(currP);
+        // or else do a copy???
+
+        int numWP = vesselPath->waypoints.size();
         wcount_ = numWP;
         wIdx_ = 0;
         float x, y;
         ROS_INFO("Number of Waypoints: %d", numWP);
-        //wparray_ = new float[numWP][2];
-        //float[numWP] wpx_;
-        waypoints_.resize(numWP);
-        for(int i=0;i<numWP;i++)
+        for(int n=0; n<numWP;n++)
         {
-            waypoints_[i].resize(2);
+            waypoints_.pushback(vesselPath.at(n))
         }
-        // Cycles through the received waypoints, adding them to the private waypoints array.
-        geometry_msgs::Pose ps;
-        for(int n=0; n<numWP; n++)
-        {
-            ps = newWP->poses.at(n);
-            waypoints_[n][0] = ps.position.x;
-            waypoints_[n][1] = ps.position.y;
-            //ROS_INFO("Point: X: %lf Y: %lf", waypoints_[n][0], waypoints_[n][1]);
-            std::cout << "Size: " << waypoints_.size() << std::endl;
-        }
+         
         go_ = true;
         on_path_ = false;  // This gets set to true when the robot moves onto the path.
         return;
@@ -313,6 +313,12 @@ public:
         double dist2wp = sqrt(pow((px_-tx_),2) + pow((py_-ty_),2));
         if(dist2wp < tolerance_)
         {
+            // Publish a message indicating the waypoint is hit
+            geometry_msgs::Pose pose_msg;
+            pose_msg.position.x = tx_;
+            pose_msg.position.y = ty_;
+            hitPub_.publish(pose_msg);
+            // Increment the counter
             wIdx_++;
             if(wIdx_ >= wcount_)
             {
@@ -322,10 +328,11 @@ public:
         }
         if(wcount_ > 0 && wIdx_+1 < wcount_)
         {
-            wx_ = waypoints_[wIdx_][0];
-            wy_ = waypoints_[wIdx_][1];
-            tx_ = waypoints_[wIdx_+1][0];
-            ty_ = waypoints_[wIdx_+1][1];
+            wx_ = waypoints_.at(wIdx_).x;
+            wy_ = waypoints_.at(wIdx_).y;
+            tx_ = waypoints_.at(wIdx_ + 1).x;
+            ty_ = waypoints_.at(wIdx_ + 1).y;
+            tolerance_ = waypoints_.at(wIdx_+1).tolerance;
         }
 
         ROS_INFO("Wx %f Wy %f Tx %f Ty %f", wx_, wy_, tx_, ty_);
@@ -367,7 +374,7 @@ private:
 
     double kp_;
 
-    std::vector<std::vector<float> > waypoints_;
+    std::vector<rowbot_msgs::VesselWaypoint> waypoints_;
 
     bool on_path_;
 
