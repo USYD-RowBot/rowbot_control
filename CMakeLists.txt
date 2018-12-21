@@ -18,9 +18,9 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 
-#set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-#find_package(GEOS REQUIRED)
+find_package(GEOS REQUIRED)
 
 
 ## System dependencies are found with CMake's conventions
@@ -175,11 +175,11 @@ target_link_libraries(path_to_waypoints ${catkin_LIBRARIES})
 add_dependencies(path_to_waypoints ${catkin_EXPORTED_TARGETS})
 
 add_executable(navigate_asv src/navigate_asv.cpp)
-target_link_libraries(navigate_asv ${catkin_LIBRARIES})
+target_link_libraries(navigate_asv ${catkin_LIBRARIES} ${GEOS_LIBRARIES})
 add_dependencies(navigate_asv ${catkin_EXPORTED_TARGETS})
 
 add_executable(navigate_vessel src/navigate_vessel.cpp)
-target_link_libraries(navigate_vessel ${catkin_LIBRARIES})
+target_link_libraries(navigate_vessel ${catkin_LIBRARIES} ${GEOS_LIBRARIES})
 add_dependencies(navigate_vessel ${catkin_EXPORTED_TARGETS})
 
 

@@ -209,7 +209,7 @@ public:
                     // Request new waypoints, with complete false
                     requestWaypoints(false);
                     // Stop the vessel
-                    stopVessel()
+                    stop_vessel();
                 }
 
                 if(use_nlgl_)
@@ -301,7 +301,7 @@ public:
         if(pf > 1.0)
         {
             // Return true if the waypoint is missed
-            ROS_INFO("Missed Waypoint")
+            ROS_INFO("Missed Waypoint");
             return true;
         }
         // Return false if the waypoint is OK

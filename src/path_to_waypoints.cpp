@@ -14,6 +14,7 @@
 
 #include "ros/ros.h"
 #include "nav_msgs/Odometry.h"
+#include "nav_msgs/Path.h"
 #include "tf/transform_datatypes.h"
 #include "rowbot_msgs/VesselWaypoint.h"
 #include "rowbot_msgs/VesselPath.h"
@@ -24,20 +25,21 @@ public:
     PathToWaypoints()
 	{
             // ros::NodeHandle n_("~");
-            waypointPub_ = n_.advertise<rowbot_msgs::VesselPath>("/waypoints", 1)
+            waypointPub_ = n_.advertise<rowbot_msgs::VesselPath>("/waypoints", 1);
             pathSub_ =  n_.subscribe("/path", 1, &PathToWaypoints::pathCallback, this);
-            ros::param::get("~tolerance", tolerance_)
+            ros::param::get("~tolerance", tolerance_);
     }
     
     //Path Callback
     void pathCallback(const nav_msgs::Path::ConstPtr& msg)
     {
         rowbot_msgs::VesselPath wpPath;
-        for(n=0;n<msg->poses.size(), n++)
+        for(int n=0;n<msg->poses.size(); n++)
         {
             rowbot_msgs::VesselWaypoint wp;
-            wp.pose = msg->poses.at(n);
+            wp.pose = msg->poses.at(n).pose;
             wp.tolerance = tolerance_;
+            wpPath.waypoints.push_back(wp);
         }
         waypointPub_.publish(wpPath);
 
@@ -58,7 +60,7 @@ int main(int argc, char **argv)
 
   ros::init(argc, argv, "path_to_waypoint");
 
-  PathToWaypoint p2w;
+  PathToWaypoints p2w;
 
   ros::spin();
 

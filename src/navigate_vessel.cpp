@@ -38,6 +38,7 @@
 #include <geos/geom/CoordinateArraySequence.h>
 #include <geos/geom/LineSegment.h>
 
+
 class Navigator
 {
 public:
@@ -210,7 +211,7 @@ public:
                     // Request new waypoints, with complete false
                     requestWaypoints(false);
                     // Stop the vessel
-                    stopVessel()
+                    stop_vessel();
                 }
 
                 if(use_nlgl_)
@@ -267,7 +268,7 @@ public:
         ROS_INFO("Number of Waypoints: %d", numWP);
         for(int n=0; n<numWP;n++)
         {
-            waypoints_.pushback(vesselPath.at(n))
+            waypoints_.push_back(vesselPath->waypoints.at(n));
         }
          
         go_ = true;
@@ -301,7 +302,7 @@ public:
         if(pf > 1.0)
         {
             // Return true if the waypoint is missed
-            ROS_INFO("Missed Waypoint")
+            ROS_INFO("Missed Waypoint");
             return true;
         }
         // Return false if the waypoint is OK
@@ -328,11 +329,13 @@ public:
         }
         if(wcount_ > 0 && wIdx_+1 < wcount_)
         {
-            wx_ = waypoints_.at(wIdx_).x;
-            wy_ = waypoints_.at(wIdx_).y;
-            tx_ = waypoints_.at(wIdx_ + 1).x;
-            ty_ = waypoints_.at(wIdx_ + 1).y;
-            tolerance_ = waypoints_.at(wIdx_+1).tolerance;
+            rowbot_msgs::VesselWaypoint wp = waypoints_.at(wIdx_);
+            rowbot_msgs::VesselWaypoint tp = waypoints_.at(wIdx_ + 1);
+            wx_ = wp.pose.position.x;
+            wy_ = wp.pose.position.y;
+            tx_ = tp.pose.position.x;
+            ty_ = tp.pose.position.y;
+            tolerance_ = tp.tolerance;
         }
 
         ROS_INFO("Wx %f Wy %f Tx %f Ty %f", wx_, wy_, tx_, ty_);
