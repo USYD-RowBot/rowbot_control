@@ -45,27 +45,27 @@ public:
     Navigator()
 	{
             // Subscribe to EKF
-            subLocalise_ =  n_.subscribe("/odom", 1, &Navigator::localisationCallback, this);
+            subLocalise_ =  n_.subscribe("odom", 1, &Navigator::localisationCallback, this);
             // Susbcribe to waypoints
-            subWP_ =  n_.subscribe("/waypoints", 1, &Navigator::wpCallback, this);
+            subWP_ =  n_.subscribe("waypoints", 1, &Navigator::wpCallback, this);
             // Publish waypoint request
-            reqPub_ = n_.advertise<std_msgs::Bool>("/request_waypoints", 1);
+            reqPub_ = n_.advertise<std_msgs::Bool>("request_waypoints", 1);
             // Course Publish
-            coursePub_ = n_.advertise<rowbot_msgs::Course>("/cmd_course", 1);
+            coursePub_ = n_.advertise<rowbot_msgs::Course>("cmd_course", 1);
             // Publish a message every time a waypoint is hit
-            hitPub_ = n_.advertise<geometry_msgs::Pose>("/waypoint_hit", 1);
+            hitPub_ = n_.advertise<geometry_msgs::Pose>("waypoint_hit", 1);
 
             // The speed of the Kingfisher - Only for naive (P Controller)
-            n_.param("speed", speed_, 0.5);
+            ros::param::get("~speed", speed_);  //n_.param("speed", speed_, 0.5);
             // The waypoint tolerance - the distance at which a waypoint activated
-            n_.param("waypoint_tolerance", tolerance_, 4.0);
+            ros::param::get("~tolerance", tolerance_);  //n_.param("waypoint_tolerance", tolerance_, 4.0);
 
             // Go - set to zero, as only goes when it has active waypoints
             go_ = false;
             // Use NLGL if true, use pure pursuit if false.
-            n_.param("use_nlgl", use_nlgl_, false);
+            ros::param::get("~use_nlgl", use_nlgl_);  //n_.param("use_nlgl", use_nlgl_, false);
             // The NLGL Radius
-            n_.param("nlgl_radius", nlgl_radius_, 10.0);
+            ros::param::get("~nlgl_radius", nlgl_radius_); //n_.param("nlgl_radius", nlgl_radius_, 10.0);
 
             on_path_ = false;
 	}
@@ -200,7 +200,9 @@ public:
             double roll, pitch, yaw;
             tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);
             phi_ = yaw;
-            //ROS_INFO("Pose - X: %lf, Y: %lf, Theta: %lf", px_, py_, phi_);
+            
+            // ROS_INFO("Pose - X: %lf, Y: %lf, Theta: %lf", px_, py_, phi_);
+            
             if(go_)
             {
                 // Select the waypoints
@@ -208,6 +210,7 @@ public:
                 
                 if(waypointMissed())
                 {
+                    ROS_INFO("P(%f, %f) W(%f,%f) T(%f,%f)", px_, py_,  wx_, wy_, tx_, ty_);
                     // Request new waypoints, with complete false
                     requestWaypoints(false);
                     // Stop the vessel
@@ -226,7 +229,7 @@ public:
                 double phid = purepursuit(tx_, ty_);
                 //ROS_INFO("Direction: - tx: %lf ty: %lf phi: %lf", tx_, ty_, phid);
                 //double phid = 0.3;
-                ROS_INFO("Pose - x: %lf y: %lf phi: %lf WP - tx: %lf ty: %lf idx: %d", px_, py_, phi_, tx_, ty_, wIdx_);
+                // ROS_INFO("Pose - x: %lf y: %lf phi: %lf WP - tx: %lf ty: %lf idx: %d", px_, py_, phi_, tx_, ty_, wIdx_);
                 // Publishes a course message
                 rowbot_msgs::Course course;
                 course.speed = speed_;
@@ -252,17 +255,15 @@ public:
         waypoints_.clear();
         // TODO add a waypoint of the current position at the start
         // e.g.:
-        // rowbot_msgs::VesselWaypoint currP;
-        // geometry_msgs::Pose pose;
-        // pose.position.x = px_;
-        // pose.position.y = py_;
-        // currP.pose = pose;
-        // currP.tolerance = tolerance_;
-        // vesselPath->waypoints.pushfront(currP);
-        // or else do a copy???
+        rowbot_msgs::VesselWaypoint currP;
+        currP.pose.position.x = px_;
+        currP.pose.position.y = py_;
+        currP.tolerance = tolerance_;
+        waypoints_.push_back(currP); 
+        // If you do this then need to add +1 to numWP (wcount_)!!!
 
         int numWP = vesselPath->waypoints.size();
-        wcount_ = numWP;
+        wcount_ = numWP + 1; // +1 for the starting point
         wIdx_ = 0;
         float x, y;
         ROS_INFO("Number of Waypoints: %d", numWP);
@@ -326,6 +327,8 @@ public:
                 wIdx_ = 0;
                 requestWaypoints(true);
             }
+
+            ROS_INFO("Waypoint Hit - tolerance = %f", tolerance_);
         }
         if(wcount_ > 0 && wIdx_+1 < wcount_)
         {
@@ -338,7 +341,7 @@ public:
             tolerance_ = tp.tolerance;
         }
 
-        ROS_INFO("Wx %f Wy %f Tx %f Ty %f", wx_, wy_, tx_, ty_);
+        ROS_INFO("P(%f, %f) W(%f,%f) T(%f,%f)", px_, py_,  wx_, wy_, tx_, ty_);
 
         return;
 	}

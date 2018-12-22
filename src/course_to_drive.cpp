@@ -28,8 +28,8 @@ public:
     CourseToDrive()
 	{
             // ros::NodeHandle n_("~");
-            stbdPub_ = n_.advertise<std_msgs::Float32>("/right_thrust_cmd", 1);
-            portPub_ = n_.advertise<std_msgs::Float32>("/left_thrust_cmd", 1);
+            stbdPub_ = n_.advertise<std_msgs::Float32>("right_thrust_cmd", 1);
+            portPub_ = n_.advertise<std_msgs::Float32>("left_thrust_cmd", 1);
             ros::param::get("~use_vel_fitting", use_vel_fitting_);
             ros::param::get("~negative_scaling_factor", negative_scaling_factor_);
             ros::param::get("~positive_scaling_factor", positive_scaling_factor_);
@@ -66,9 +66,9 @@ public:
             received_course_ = false;
 
             // Subscribe to EKF
-            subLocalise_ =  n_.subscribe("/odom", 1, &CourseToDrive::localisationCallback, this);
+            subLocalise_ =  n_.subscribe("odom", 1, &CourseToDrive::localisationCallback, this);
             // Subscribe to course command
-            courseSub_ =  n_.subscribe("/cmd_course", 1, &CourseToDrive::courseCallback, this);
+            courseSub_ =  n_.subscribe("cmd_course", 1, &CourseToDrive::courseCallback, this);
     }
     // Uses the odometry to get the current course, in order to find the difference
     void localisationCallback(const nav_msgs::Odometry::ConstPtr& odom)

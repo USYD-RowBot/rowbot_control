@@ -25,8 +25,8 @@ public:
     PathToWaypoints()
 	{
             // ros::NodeHandle n_("~");
-            waypointPub_ = n_.advertise<rowbot_msgs::VesselPath>("/waypoints", 1);
-            pathSub_ =  n_.subscribe("/path", 1, &PathToWaypoints::pathCallback, this);
+            waypointPub_ = n_.advertise<rowbot_msgs::VesselPath>("waypoints", 1);
+            pathSub_ =  n_.subscribe("path", 1, &PathToWaypoints::pathCallback, this);
             ros::param::get("~tolerance", tolerance_);
     }
     
